@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>California House Price Prediction</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='home.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        #map {
+            height: 400px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var map = L.map('map').setView([37.5, -119.5], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            var marker;
+            function updateMap(lat, lng) {
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+                marker = L.marker([lat, lng]).addTo(map);
+                map.setView([lat, lng], 10);
+                determineOceanProximity(lat, lng);
+            }
+            
+            map.on('click', function(e) {
+                document.getElementById('latitude').value = e.latlng.lat;
+                document.getElementById('latitude_value').value = e.latlng.lat;
+                document.getElementById('longitude').value = e.latlng.lng;
+                document.getElementById('longitude_value').value = e.latlng.lng;
+                updateMap(e.latlng.lat, e.latlng.lng);
+            });
+            
+            document.getElementById('latitude').addEventListener('input', function() {
+                let lat = parseFloat(this.value);
+                document.getElementById('latitude_value').value = lat;
+                let lng = parseFloat(document.getElementById('longitude').value);
+                updateMap(lat, lng);
+            });
+            
+            document.getElementById('longitude').addEventListener('input', function() {
+                let lng = parseFloat(this.value);
+                document.getElementById('longitude_value').value = lng;
+                let lat = parseFloat(document.getElementById('latitude').value);
+                updateMap(lat, lng);
+            });
+        });
+        
+        function determineOceanProximity(lat, lng) {
+            let proximity = "INLAND";
+            if (lat > 33 && lat < 42 && lng > -125 && lng < -114) {
+                if (lng > -124.5) {
+                    proximity = "NEAR OCEAN";
+                } else if (lng > -122) {
+                    proximity = "NEAR BAY";
+                } else {
+                    proximity = "<1H OCEAN";
+                }
+                if ((lat > 33.5 && lat < 34.5 && lng > -120.5 && lng < -119.5) || (lat > 32.5 && lat < 33.5 && lng > -118 && lng < -117)) {
+                    proximity = "ISLAND";
+                }
+                if (lng < -124.5 || (lat > 32 && lat < 35 && lng < -122)) {
+                    proximity = "OCEAN";
+                }
+            }
+            document.getElementById('ocean_proximity').value = proximity;
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-heading">California Housing Price Prediction</h1>
+        <form action="{{ url_for('predict_datapoint') }}" method="post">
+            <div class="form-container">
+                <legend>Enter Housing Details</legend>
+
+                <label class="form-label">Select Location on Map:</label>
+                <div id="map"></div>
+                
+                <label class="form-label">Latitude:</label>
+                <input class="form-control" type="range" step="0.0001" id="latitude" name="latitude" min="33" max="42" value="37.5">
+                <input class="form-control" type="number" step="0.0001" id="latitude_value" name="latitude_value" value="37.5">
+                
+                <label class="form-label">Longitude:</label>
+                <input class="form-control" type="range" step="0.0001" id="longitude" name="longitude" min="-125" max="-114" value="-119.5">
+                <input class="form-control" type="number" step="0.0001" id="longitude_value" name="longitude_value" value="-119.5">
+                
+                <label class="form-label">Ocean Proximity:</label>
+                <select class="form-control" id="ocean_proximity" name="ocean_proximity">
+                    <option value="INLAND">INLAND</option>
+                    <option value="NEAR OCEAN">NEAR OCEAN</option>
+                    <option value="NEAR BAY">NEAR BAY</option>
+                    <option value="<1H OCEAN">&lt;1H OCEAN</option>
+                    <option value="ISLAND">ISLAND</option>
+                    <option value="OCEAN">OCEAN</option>
+                </select>
+                
+                <label class="form-label">Median Income:</label>
+                <input class="form-control" type="number" step="0.01" name="median_income" value="3.5" required>
+                
+                <label class="form-label">House Age:</label>
+                <input class="form-control" type="number" step="0.1" name="house_age" value="20" required>
+                
+                <label class="form-label">Total Rooms:</label>
+                <input class="form-control" type="number" name="total_rooms" value="1500" required>
+                
+                <label class="form-label">Total Bedrooms:</label>
+                <input class="form-control" type="number" name="total_bedrooms" value="300" required>
+                
+                <label class="form-label">Population:</label>
+                <input class="form-control" type="number" name="population" value="1200" required>
+                
+                <label class="form-label">Households:</label>
+                <input class="form-control" type="number" name="households" value="400" required>
+                
+                
+                
+                <div class="form-button">
+                    <input class="btn btn-primary" type="submit" value="Predict Price">
+                </div>
+            </div>
+        </form>
+        <h2>
+            The predicted house price is: {{ results }}
+        </h2>
+    </div>
+</body>
+</html>

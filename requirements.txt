@@ -1,0 +1,12 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+shapely
+geopandas
+haversine
+dill
+kagglehub
+flask
+-e .
